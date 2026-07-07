@@ -1,3 +1,6 @@
 .backlog/remote/
 .backlog/local/
 .backlog/breakdowns/
+node_modules/
+coverage/
+.nyc_output/

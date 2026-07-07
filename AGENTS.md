@@ -64,6 +64,8 @@ Always:
 - Prefer minimal, focused edits that preserve existing file responsibilities.
 - Promote repeated mistakes into explicit Always/Never rules here.
 - Keep skill folder names and `SKILL.md` frontmatter `name` identical.
+- For issue-selection skills, define explicit default filters and deterministic fallback ordering.
+- Verify live GitHub label names before assuming a documented label slug.
 
 Never:
 - Assume README naming is current without checking workspace structure.
@@ -72,11 +74,11 @@ Never:
 
 ## Rolling Turn Summary (overwrite each meaningful turn)
 - Date: 2026-07-07
-- Intent: Implement a reusable workspace skill for PR/MR request standards.
-- Files touched: `.github/skills/pr-request-standards/SKILL.md`, `AGENTS.md`.
-- Risks/problems observed: Branch policy has a special chore exception that differs from feature/bugfix/hotfix Jira requirements.
-- Decision/fix: Added explicit dual branch-rule validation and strict Conventional Commit checks to the new skill.
-- Verification: Confirmed skill path and frontmatter naming match (`pr-request-standards`), and included validation regex plus pass/fail examples.
+- Intent: Fix task persistence being lost on refresh.
+- Files touched: `popup.js`, `options.js`, `AGENTS.md`.
+- Risks/problems observed: The popup and settings code awaited `chrome.storage.local.get()` directly, which can return `undefined` in callback-style extension API implementations even when writes succeed.
+- Decision/fix: Added Promise wrappers around `chrome.storage.local.get/set` in popup and settings so persistence works in both callback-based and Promise-based Chrome extension runtimes.
+- Verification: Reran the todo-core test file and checked editor diagnostics for the touched scripts.
 
 ## Drift Notes
 - README project structure section references `popup.html` and `manifest.json`.
