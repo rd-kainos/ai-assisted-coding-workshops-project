@@ -1,14 +1,67 @@
 const API_KEY_STORAGE_KEY = 'kainos-todo:apiKey';
-const storageArea = globalThis.chrome?.storage?.local ?? null;
+const STORAGE_MODE_EXTENSION = 'extension';
+const STORAGE_MODE_LOCAL = 'local';
+const STORAGE_MODE_NONE = 'none';
+const chromeStorageArea = globalThis.chrome?.storage?.local ?? null;
+
+function detectStorageMode() {
+  if (chromeStorageArea) {
+    return STORAGE_MODE_EXTENSION;
+  }
+
+  try {
+    if (globalThis.localStorage) {
+      return STORAGE_MODE_LOCAL;
+    }
+  } catch (_error) {
+    return STORAGE_MODE_NONE;
+  }
+
+  return STORAGE_MODE_NONE;
+}
+
+const storageMode = detectStorageMode();
+
+function setStatus(message) {
+  const saveStatus = document.getElementById('save-status');
+  saveStatus.textContent = message;
+}
+
+function parseStoredValue(rawValue) {
+  if (typeof rawValue !== 'string') {
+    return undefined;
+  }
+
+  try {
+    return JSON.parse(rawValue);
+  } catch (_error) {
+    return undefined;
+  }
+}
+
+function localStorageGet(key) {
+  const rawValue = globalThis.localStorage.getItem(key);
+  return { [key]: parseStoredValue(rawValue) };
+}
+
+function localStorageSet(items) {
+  Object.entries(items).forEach(([key, value]) => {
+    globalThis.localStorage.setItem(key, JSON.stringify(value));
+  });
+}
 
 function storageGet(key) {
-  if (!storageArea) {
+  if (storageMode === STORAGE_MODE_LOCAL) {
+    return Promise.resolve(localStorageGet(key));
+  }
+
+  if (storageMode !== STORAGE_MODE_EXTENSION) {
     return Promise.resolve({});
   }
 
   return new Promise((resolve, reject) => {
     try {
-      const maybePromise = storageArea.get(key, (result) => {
+      const maybePromise = chromeStorageArea.get(key, (result) => {
         const error = globalThis.chrome?.runtime?.lastError;
         if (error) {
           reject(new Error(error.message));
@@ -31,13 +84,18 @@ function storageGet(key) {
 }
 
 function storageSet(items) {
-  if (!storageArea) {
+  if (storageMode === STORAGE_MODE_LOCAL) {
+    localStorageSet(items);
+    return Promise.resolve(true);
+  }
+
+  if (storageMode !== STORAGE_MODE_EXTENSION) {
     return Promise.resolve(false);
   }
 
   return new Promise((resolve, reject) => {
     try {
-      const maybePromise = storageArea.set(items, () => {
+      const maybePromise = chromeStorageArea.set(items, () => {
         const error = globalThis.chrome?.runtime?.lastError;
         if (error) {
           reject(new Error(error.message));
@@ -57,17 +115,22 @@ function storageSet(items) {
 }
 
 async function loadApiKey() {
-  if (!storageArea) {
+  if (storageMode === STORAGE_MODE_NONE) {
+    setStatus('Storage unavailable');
     return;
   }
 
   const stored = await storageGet(API_KEY_STORAGE_KEY);
   const apiKey = typeof stored[API_KEY_STORAGE_KEY] === 'string' ? stored[API_KEY_STORAGE_KEY] : '';
   document.getElementById('api-key-input').value = apiKey;
+
+  if (storageMode === STORAGE_MODE_LOCAL) {
+    setStatus('Using local browser storage (tab mode)');
+  }
 }
 
 async function saveApiKey(key) {
-  if (!storageArea) {
+  if (storageMode === STORAGE_MODE_NONE) {
     return false;
   }
 
@@ -77,10 +140,9 @@ async function saveApiKey(key) {
 document.getElementById('settings-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const key = document.getElementById('api-key-input').value.trim();
-  const saveStatus = document.getElementById('save-status');
 
   const saved = await saveApiKey(key);
-  saveStatus.textContent = saved ? 'Saved' : 'Storage unavailable';
+  setStatus(saved ? 'Saved' : 'Storage unavailable');
 });
 
 void loadApiKey();

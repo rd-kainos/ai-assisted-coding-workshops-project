@@ -85,6 +85,12 @@
       margin-bottom: 18px;
     }
 
+    .card-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
     .card-title {
       color: white;
       font-size: 18px;
@@ -95,6 +101,34 @@
       color: rgba(255, 255, 255, 0.4);
       font-size: 12px;
       font-weight: 500;
+    }
+
+    #storage-mode-badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      background: rgba(255, 255, 255, 0.16);
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    #storage-mode-badge.mode-extension {
+      background: rgba(0, 177, 64, 0.18);
+      color: #a7f3d0;
+    }
+
+    #storage-mode-badge.mode-local {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fde68a;
+    }
+
+    #storage-mode-badge.mode-none {
+      background: rgba(239, 68, 68, 0.2);
+      color: #fecaca;
     }
 
     /* ── Progress Bar ────────────────────────────────────────── */
@@ -428,7 +462,10 @@
     <div class="card-header">
       <div class="card-title-row">
         <span class="card-title">My Tasks</span>
-        <span id="task-count"></span>
+        <div class="card-meta">
+          <span id="storage-mode-badge" class="mode-none">No storage</span>
+          <span id="task-count"></span>
+        </div>
       </div>
       <div class="progress-wrap">
         <div id="progress-bar"></div>
@@ -473,7 +510,7 @@
 
   </div>
 
-  <p class="caption">Tasks stored locally in your browser</p>
+  <p class="caption" id="storage-caption">Tasks stored locally in your browser</p>
 
   <script src="todo-core.js"></script>
   <script src="popup.js"></script>

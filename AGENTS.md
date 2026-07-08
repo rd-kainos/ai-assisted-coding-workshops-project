@@ -14,7 +14,7 @@ Agent operating guide for this repository.
 ## Hard Constraints
 - Stack is plain HTML5, vanilla JavaScript (ES2020+), and plain CSS.
 - No frameworks, no TypeScript, no bundler, and no npm package additions unless explicitly requested.
-- Persistence must use `chrome.storage.local` only (never `localStorage`).
+- Persistence defaults to `chrome.storage.local`; `localStorage` fallback is allowed only when user explicitly requests direct-browser dual mode.
 - Storage keys must be constants and use `kainos-todo:` prefix.
 - Keep solutions simple and task-scoped; avoid broad refactors unless requested.
 
@@ -69,16 +69,16 @@ Always:
 
 Never:
 - Assume README naming is current without checking workspace structure.
-- Use `localStorage` for this project.
+- Introduce `localStorage` without explicit user request for dual-mode behavior.
 - Add framework/tooling complexity unless explicitly requested.
 
 ## Rolling Turn Summary (overwrite each meaningful turn)
-- Date: 2026-07-07
-- Intent: Fix task persistence being lost on refresh.
-- Files touched: `popup.js`, `options.js`, `AGENTS.md`.
-- Risks/problems observed: The popup and settings code awaited `chrome.storage.local.get()` directly, which can return `undefined` in callback-style extension API implementations even when writes succeed.
-- Decision/fix: Added Promise wrappers around `chrome.storage.local.get/set` in popup and settings so persistence works in both callback-based and Promise-based Chrome extension runtimes.
-- Verification: Reran the todo-core test file and checked editor diagnostics for the touched scripts.
+- Date: 2026-07-08
+- Intent: Make active storage mode obvious while testing dual-mode persistence.
+- Files touched: `index.html`, `popup.js`, `AGENTS.md`.
+- Risks/problems observed: Caption-only mode feedback can be missed, causing confusion when users test refresh behavior.
+- Decision/fix: Added a prominent header badge (`Extension` / `Browser tab` / `No storage`) and wired it to runtime storage-mode detection.
+- Verification: Checked diagnostics for changed files after badge wiring.
 
 ## Drift Notes
 - README project structure section references `popup.html` and `manifest.json`.

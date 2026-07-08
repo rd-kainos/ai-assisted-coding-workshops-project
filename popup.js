@@ -7,7 +7,28 @@ const FILTERS = new Set([
   TodoCore.FILTER_ACTIVE,
   TodoCore.FILTER_DONE,
 ]);
-const storageArea = globalThis.chrome?.storage?.local ?? null;
+const STORAGE_MODE_EXTENSION = 'extension';
+const STORAGE_MODE_LOCAL = 'local';
+const STORAGE_MODE_NONE = 'none';
+const chromeStorageArea = globalThis.chrome?.storage?.local ?? null;
+
+function detectStorageMode() {
+  if (chromeStorageArea) {
+    return STORAGE_MODE_EXTENSION;
+  }
+
+  try {
+    if (globalThis.localStorage) {
+      return STORAGE_MODE_LOCAL;
+    }
+  } catch (_error) {
+    return STORAGE_MODE_NONE;
+  }
+
+  return STORAGE_MODE_NONE;
+}
+
+const storageMode = detectStorageMode();
 
 const state = {
   todos: [],
@@ -15,16 +36,89 @@ const state = {
   aiLoading: null,
 };
 
+function updateStorageCaption() {
+  const caption = document.getElementById('storage-caption');
+  const badge = document.getElementById('storage-mode-badge');
+  const modeClasses = ['mode-extension', 'mode-local', 'mode-none'];
+
+  if (badge) {
+    badge.classList.remove(...modeClasses);
+  }
+
+  if (!caption) {
+    if (!badge) {
+      return;
+    }
+  }
+
+  if (storageMode === STORAGE_MODE_EXTENSION) {
+    if (caption) {
+      caption.textContent = 'Tasks stored via Chrome extension storage';
+    }
+    if (badge) {
+      badge.textContent = 'Extension';
+      badge.classList.add('mode-extension');
+    }
+    return;
+  }
+
+  if (storageMode === STORAGE_MODE_LOCAL) {
+    if (caption) {
+      caption.textContent = 'Tasks stored via local browser storage (tab mode)';
+    }
+    if (badge) {
+      badge.textContent = 'Browser tab';
+      badge.classList.add('mode-local');
+    }
+    return;
+  }
+
+  if (caption) {
+    caption.textContent = 'Storage unavailable in this browser context.';
+  }
+  if (badge) {
+    badge.textContent = 'No storage';
+    badge.classList.add('mode-none');
+  }
+}
+
 // ── Persistence ────────────────────────────────────────────────
 
+function parseStoredValue(rawValue) {
+  if (typeof rawValue !== 'string') {
+    return undefined;
+  }
+
+  try {
+    return JSON.parse(rawValue);
+  } catch (_error) {
+    return undefined;
+  }
+}
+
+function localStorageGet(key) {
+  const rawValue = globalThis.localStorage.getItem(key);
+  return { [key]: parseStoredValue(rawValue) };
+}
+
+function localStorageSet(items) {
+  Object.entries(items).forEach(([key, value]) => {
+    globalThis.localStorage.setItem(key, JSON.stringify(value));
+  });
+}
+
 function storageGet(key) {
-  if (!storageArea) {
+  if (storageMode === STORAGE_MODE_LOCAL) {
+    return Promise.resolve(localStorageGet(key));
+  }
+
+  if (storageMode !== STORAGE_MODE_EXTENSION) {
     return Promise.resolve({});
   }
 
   return new Promise((resolve, reject) => {
     try {
-      const maybePromise = storageArea.get(key, (result) => {
+      const maybePromise = chromeStorageArea.get(key, (result) => {
         const error = globalThis.chrome?.runtime?.lastError;
         if (error) {
           reject(new Error(error.message));
@@ -47,13 +141,18 @@ function storageGet(key) {
 }
 
 function storageSet(items) {
-  if (!storageArea) {
+  if (storageMode === STORAGE_MODE_LOCAL) {
+    localStorageSet(items);
+    return Promise.resolve();
+  }
+
+  if (storageMode !== STORAGE_MODE_EXTENSION) {
     return Promise.resolve();
   }
 
   return new Promise((resolve, reject) => {
     try {
-      const maybePromise = storageArea.set(items, () => {
+      const maybePromise = chromeStorageArea.set(items, () => {
         const error = globalThis.chrome?.runtime?.lastError;
         if (error) {
           reject(new Error(error.message));
@@ -73,11 +172,7 @@ function storageSet(items) {
 }
 
 async function loadState() {
-  if (!storageArea) {
-    state.todos = [];
-    render();
-    return;
-  }
+  updateStorageCaption();
 
   const stored = await storageGet(STORAGE_KEY);
   state.todos = TodoCore.normalizeTodos(stored[STORAGE_KEY]);
@@ -85,7 +180,7 @@ async function loadState() {
 }
 
 async function saveState() {
-  if (!storageArea) {
+  if (storageMode === STORAGE_MODE_NONE) {
     return;
   }
 

@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Kainos Task List",
+  "version": "0.1.0",
+  "description": "Simple task manager workshop extension.",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://openrouter.ai/*"
+  ],
+  "action": {
+    "default_popup": "index.html"
+  },
+  "options_page": "options.html"
+}
