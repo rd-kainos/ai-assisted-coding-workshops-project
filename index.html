@@ -116,11 +116,12 @@
       background: var(--white);
       border-bottom: 1px solid #e5e7eb;
       display: flex;
+      flex-wrap: wrap;
       gap: 10px;
     }
 
     #todo-input {
-      flex: 1;
+      flex: 1 1 220px;
       padding: 10px 14px;
       border: 1.5px solid #e5e7eb;
       border-radius: 10px;
@@ -135,6 +136,26 @@
     #todo-input::placeholder { color: #9ca3af; }
 
     #todo-input:focus {
+      border-color: var(--green);
+      background: white;
+      box-shadow: 0 0 0 3px rgba(0, 177, 64, 0.12);
+    }
+
+    #due-date-input {
+      flex: 0 1 150px;
+      min-width: 0;
+      padding: 10px 12px;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 13px;
+      font-family: inherit;
+      color: var(--text);
+      background: #f9fafb;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+    }
+
+    #due-date-input:focus {
       border-color: var(--green);
       background: white;
       box-shadow: 0 0 0 3px rgba(0, 177, 64, 0.12);
@@ -265,6 +286,20 @@
     .priority-high   { background: #fee2e2; color: var(--high); }
     .priority-medium { background: #fef3c7; color: var(--medium); }
     .priority-low    { background: #d1fae5; color: var(--low); }
+
+    .due-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 20px;
+      letter-spacing: 0.4px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .due-overdue { background: #fee2e2; color: var(--high); }
+    .due-today { background: #fef3c7; color: #b45309; }
+    .due-upcoming { background: #d1fae5; color: var(--low); }
 
     /* ── Delete Button ───────────────────────────────────────── */
     .btn-delete {
@@ -408,6 +443,11 @@
         maxlength="200"
         autocomplete="off"
       />
+      <input
+        id="due-date-input"
+        type="date"
+        aria-label="Optional due date"
+      />
       <button type="submit" id="btn-add">Add</button>
     </form>
 
@@ -435,6 +475,7 @@
 
   <p class="caption">Tasks stored locally in your browser</p>
 
+  <script src="todo-core.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>
